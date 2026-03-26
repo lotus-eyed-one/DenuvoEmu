@@ -21,6 +21,14 @@
 - [Security Implications](#security-implications)
 - [Alternative Approaches](#alternative-approaches)
 - [Research Methodology](#research-methodology)
+- [Strategic Focus: Why Version Targeting Matters](#-strategic-focus-why-version-targeting-matters)
+- [Environmental Preconditions & Research Validity](#-environmental-preconditions--their-impact-on-research-validity)
+- [Virtualized Execution as a Research Primitive](#-virtualized-execution-as-a-research-primitive)
+- [Binary Differential Analysis](#-binary-differential-analysis)
+- [Cross-Platform Research Limitations](#-cross-platform-research-limitations)
+- [Protocol Bridge Analysis](#-protocol-bridge-analysis)
+- [Breakpoint Strategy Taxonomy](#-breakpoint-strategy-taxonomy)
+- [OEP Recovery Research](#-oep-recovery-research)
 - [References](#references)
 
 ---
@@ -99,12 +107,12 @@ Denuvo Anti-Tamper typically operates with multiple protection layers:
 ```
 ┌─────────────────────────────────────────────────────┐
 │         Application Layer (Ring 3)                  │
-│  ┌─────────────────────────────────────────────┐    │
-│  │  Game Executable + Denuvo Wrapper           │    │
-│  │  - Mutated Bytecode (MBA) Virtual Machine   │    │
-│  │  - Hardware Fingerprinting Probes           │    │
-│  │  - License Token Verification               │    │
-│  └─────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────┐   │
+│  │  Game Executable + Denuvo Wrapper           │   │
+│  │  - Mutated Bytecode (MBA) Virtual Machine   │   │
+│  │  - Hardware Fingerprinting Probes           │   │
+│  │  - License Token Verification                │   │
+│  └─────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────┘
                       ↓ Queries
 ┌─────────────────────────────────────────────────────┐
@@ -117,16 +125,16 @@ Denuvo Anti-Tamper typically operates with multiple protection layers:
                       ↓ System Calls
 ┌─────────────────────────────────────────────────────┐
 │         Kernel Layer (Ring 0)                       │
-│  - KUSER_SHARED_DATA (0x7FFE0000)                   │
-│  - Performance Counters (RDTSC, RDPMC)              │
+│  - KUSER_SHARED_DATA (0x7FFE0000)                  │
+│  - Performance Counters (RDTSC, RDPMC)             │
 │  - Kernel Debugger Detection                        │
 │  - Driver Enumeration                               │
 └─────────────────────────────────────────────────────┘
                       ↓ Hardware Instructions
 ┌─────────────────────────────────────────────────────┐
 │         Hardware Layer (CPU Features)               │
-│  - CPU Model/Family/Stepping (CPUID 0x01)           │
-│  - Virtualization Features (CPUID 0x01, ECX bit 5)  │
+│  - CPU Model/Family/Stepping (CPUID 0x01)          │
+│  - Virtualization Features (CPUID 0x01, ECX bit 5) │
 │  - Extended Features (CPUID 0x07)                   │
 │  - MSR Registers (Model-Specific Registers)         │
 └─────────────────────────────────────────────────────┘
@@ -461,7 +469,7 @@ LONG CALLBACK VectoredExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo) {
 │  │  Windows Kernel Loads → Drivers Initialize             │  │
 │  │  • SimpleSvm.sys (AMD) OR hyperkd.sys (Intel) loads    │  │
 │  │  • VMRUN/VMLAUNCH executed → CPU enters VMX/SVM mode   │  │
-│  │  • Hypervisor intercepts: CPUID, MSR, RDTSC, XGETBV    │  │
+│  │  • Hypervisor intercepts: CPUID, MSR, RDTSC, XGETBV   │  │
 │  │  • KUSER spoofing thread starts                        │  │
 │  └────────────────────────────────────────────────────────┘  │
 └──────────────────┬───────────────────────────────────────────┘
@@ -483,22 +491,22 @@ LONG CALLBACK VectoredExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo) {
 │  4. DENUVO INITIALIZATION (Multi-Ring Defense)               │
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │  Denuvo Wrapper Activates → Hardware Fingerprinting    │  │
-│  │                                                        │  │
+│  │                                                         │  │
 │  │  [Ring 3] Game executes CPUID → [Ring -1] Hypervisor   │  │
-│  │           intercepts → Returns fake CPU info           │  │
-│  │                                                        │  │
+│  │           intercepts → Returns fake CPU info            │  │
+│  │                                                         │  │
 │  │  [Ring 3] Game reads KUSER_SHARED_DATA →               │  │
-│  │           [Ring 0] Spoofing thread provides fake time  │  │
-│  │                                                        │  │
+│  │           [Ring 0] Spoofing thread provides fake time   │  │
+│  │                                                         │  │
 │  │  [Ring 3] Game calls NtQuerySystemInformation →        │  │
-│  │           [Ring 3] IAT hook returns fake "no debugger" │  │
-│  │                                                        │  │
+│  │           [Ring 3] IAT hook returns fake "no debugger"  │  │
+│  │                                                         │  │
 │  │  [Ring 3] Game queries registry for hardware →         │  │
-│  │           [Ring 3] IAT hook returns consistent values  │  │
-│  │                                                        │  │
+│  │           [Ring 3] IAT hook returns consistent values   │  │
+│  │                                                         │  │
 │  │  [Ring 3] Game validates Steam license →               │  │
 │  │           [Ring 3] Goldberg emulator provides fake     │  │
-│  │                    steamclient responses               │  │
+│  │                    steamclient responses                │  │
 │  └────────────────────────────────────────────────────────┘  │
 └──────────────────┬───────────────────────────────────────────┘
                    ▼
@@ -685,11 +693,11 @@ Instead of using a hypervisor at Ring -1, DRM bypass can be achieved through **e
 │  RING -1 HYPERVISOR (Traditional Approach)                  │
 │  ┌────────────────────────────────────────────────────────┐ │
 │  │  Hardware Virtualization (VMX/SVM)                     │ │
-│  │  • Intercepts ALL privileged instructions              │ │
-│  │  • CPUID, RDTSC, MSR, XGETBV trapped at CPU level      │ │
-│  │  • Generic solution across games                       │ │
-│  │  ❌ Must disable VBS/HVCI/Secure Boot                  │ │
-│  │  ❌ Complex, potential system instability              │ │
+│  │  • Intercepts ALL privileged instructions             │ │
+│  │  • CPUID, RDTSC, MSR, XGETBV trapped at CPU level    │ │
+│  │  • Generic solution across games                      │ │
+│  │  ❌ Must disable VBS/HVCI/Secure Boot                │ │
+│  │  ❌ Complex, potential system instability            │ │
 │  └────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
                           ↓ CAN BE REPLACED BY ↓
@@ -812,20 +820,20 @@ LONG CALLBACK VEHHandler(PEXCEPTION_POINTERS exc) {
 │  HYBRID EMULATOR ARCHITECTURE                          │
 ├────────────────────────────────────────────────────────┤
 │  Ring -1: Minimal Hypervisor (Optional)                │
-│           • ONLY CPUID leaf 0x01 and 0x40000000        │
-│           • ONLY RDTSC for timing normalization        │
-│           • Keep VBS enabled (nested virtualization)   │
+│           • ONLY CPUID leaf 0x01 and 0x40000000       │
+│           • ONLY RDTSC for timing normalization       │
+│           • Keep VBS enabled (nested virtualization)  │
 ├────────────────────────────────────────────────────────┤
-│  Ring 0: Signed Kernel Driver (WHQL certified)         │
-│           • KUSER_SHARED_DATA spoofing                 │
-│           • NtQuerySystemInformation filtering         │
-│           • Process/thread callbacks                   │
-│           • No DSE bypass needed                       │
+│  Ring 0: Signed Kernel Driver (WHQL certified)        │
+│           • KUSER_SHARED_DATA spoofing                │
+│           • NtQuerySystemInformation filtering        │
+│           • Process/thread callbacks                  │
+│           • No DSE bypass needed                      │
 ├────────────────────────────────────────────────────────┤
-│  Ring 3: User-Mode DLL                                 │
-│           • API hooks (GetTickCount, registry, etc.)   │
-│           • Steam client emulation (Goldberg)          │
-│           • VEH for non-critical instructions          │
+│  Ring 3: User-Mode DLL                                │
+│           • API hooks (GetTickCount, registry, etc.)  │
+│           • Steam client emulation (Goldberg)         │
+│           • VEH for non-critical instructions         │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -924,10 +932,10 @@ NTSTATUS NtQuerySystemInformation_Hook(...) {
 
 **Architecture**:
 ```
-┌─────────────┐          ┌──────────────┐         ┌──────────────┐
+┌─────────────┐          ┌──────────────┐         ┌─────────────┐
 │  Game Client│  ---->   │  Proxy Server│  ---->  │ Denuvo Server│
 │  (Ring 3)   │  <----   │  (Emulated)  │  <----  │  (License)   │
-└─────────────┘          └──────────────┘         └──────────────┘
+└─────────────┘          └──────────────┘         └─────────────┘
                                │
                          Spoofs hardware
                          Handles validation
@@ -1076,6 +1084,150 @@ LONG CALLBACK DebugExceptionHandler(PEXCEPTION_POINTERS exc) {
 
 ---
 
+## 🎯 Strategic Focus: Why Version Targeting Matters
+
+### Research Effectiveness by Denuvo Generation
+
+A recurring observation from the security research community is that **effort allocation across Denuvo versions significantly impacts research value**. Investing heavily in older Denuvo versions (v1–v8, 2014–2018) yields diminishing returns:
+
+| Factor | Older Versions (v1–v8) | Modern Versions (v12–v17+) |
+|--------|------------------------|---------------------------|
+| **Active titles** | Mostly abandoned / license-lapsed | Current AAA library |
+| **Protection complexity** | Simpler MBA, fewer anti-hypervisor checks | Deep MBA nesting, active anti-VBS |
+| **Community impact** | Most already resolved through other means | Represents the actual research frontier |
+| **Transferability** | Limited to that version branch | Foundational understanding applies forward |
+
+**Research consensus**: The most productive focus is **Denuvo v12+**, with v15+ being the dominant version in current major releases. See `docs/DENUVO_VERSION_STRATEGY.md` for complete analysis.
+
+---
+
+## 🔬 Environmental Preconditions & Their Impact on Research Validity
+
+All hypervisor-based approaches share a critical weakness: they require **specific environmental setup that is itself detectable by modern DRM**. This is not a minor footnote — it affects whether research results reflect real DRM behaviour or hardened-environment behaviour.
+
+### Required Conditions
+
+| Requirement | Challenge |
+|-------------|-----------|
+| **VT-x / AMD-V enabled in BIOS** | Many OEM systems ship with restrictions; some firmware versions are incompatible |
+| **Windows Test Signing Mode** | Detectable via `KUSER_SHARED_DATA`, `NtQuerySystemInformation`, and visual watermark checks |
+| **Secure Boot disabled** | Required for unsigned UEFI or hypervisor code; disabling changes TPM PCR values |
+| **HVCI / VBS disabled** | Default-on in Windows 11 OEM builds; blocks unsigned Ring -1 code entirely |
+
+### The Test Mode Problem
+
+Test signing mode (`bcdedit /set testsigning on`) is directly observable from Ring 3. Denuvo v12+ checks `KUSER_SHARED_DATA + 0x2D4` among other vectors. A research environment that requires test mode may be presenting a different code path to the DRM system than would be seen in a production environment — potentially invalidating analysis conclusions.
+
+This represents a deeper challenge than it appears: **the research environment itself must be part of the research design**, not an assumed constant.
+
+---
+
+## 💡 Virtualized Execution as a Research Primitive
+
+Rather than patching or disabling DRM externally, an architecturally cleaner approach is to **execute the game inside a sufficiently transparent virtualized environment**, allowing the game to perform its own decryption normally — and observing the result from the hypervisor layer.
+
+### Conceptual Flow
+
+```
+Transparent VM Environment
+        │
+        ▼
+Game launches → DRM validates environment → DRM decrypts code sections
+        │
+        ▼ (observe from Ring -1 via EPT monitoring)
+Decrypted code pages become executable in guest memory
+        │
+        ▼
+Capture and reconstruct clean binary
+```
+
+### Transparency Requirements
+
+For the game to proceed normally, the VM must be indistinguishable from bare metal across:
+- **CPUID**: All leaves must return host-identical values; hypervisor presence bit must be suppressed
+- **RDTSC timing**: VM-exit latency must not produce measurable drift
+- **Hardware topology**: Cache, APIC, NUMA topology must match physical system
+- **MSR consistency**: TSC_ADJUST and related MSRs must be consistent across reads
+
+This is a significant engineering challenge and an active area of academic research. See `docs/DENUVO_VERSION_STRATEGY.md` for detailed treatment.
+
+---
+
+## 📊 Binary Differential Analysis
+
+When studying DLC or feature gating specifically, **comparing two versions of the same binary** (base vs. DLC) is a high-value technique:
+
+1. Obtain both versions (base and DLC/full)
+2. Run structural section diff — identify new/modified `.text`, `.data` regions
+3. Function-level matching in Ghidra/Binary Ninja — isolate new functions
+4. Trace call paths from new functions back to known entry points
+5. Examine what additional data the stack loads when execution reaches the EXE module boundary
+
+The [kvc project](https://github.com/wesmar/kvc) provides tooling specifically suited for this binary comparison workflow. Memory map differences between versions reveal where DRM-enforced content boundaries actually exist in practice.
+
+---
+
+## 🌐 Cross-Platform Research Limitations
+
+Hypervisor-based approaches have a significant architectural weakness: **they are effectively Windows-only**. This impacts research reproducibility and peer review potential.
+
+| Platform | Feasibility | Notes |
+|----------|-------------|-------|
+| **Windows 10/11 x64** | High | Primary research target; all tooling targets this |
+| **Linux x86_64** | Low | Denuvo titles require Proton/Wine; compatibility layer contaminates results |
+| **macOS (Intel)** | Very Low | Hypervisor entitlement required; no Denuvo native presence |
+| **macOS (Apple Silicon)** | Minimal | ARMv8 only; no x86 VMX; Rosetta invalidates analysis |
+
+Any research framework seeking reproducibility and peer-review credibility should treat Linux compatibility as a primary design constraint, not an afterthought.
+
+---
+
+## 🔗 Protocol Bridge Analysis
+
+An underexplored research vector is **analysis at the boundary between Denuvo and OS infrastructure** — rather than at the hypervisor level. Denuvo must cross observable boundaries to perform its core functions:
+
+| Bridge | Observable Point | Data of Interest |
+|--------|-----------------|-----------------|
+| **Network** | `WSASend`/`WSARecv`, TLS layer | License request/response structure |
+| **Registry** | `NtQueryKey`, `NtEnumerateValueKey` | Which hardware properties are read |
+| **Volume** | `NtQueryVolumeInformationFile` | Serial number query patterns |
+| **WMI** | `IWbemServices::ExecQuery` | Hardware property enumeration |
+| **CPUID** | Call sites in binary | Which leaves Denuvo actually uses |
+| **Syscall** | SSDT entries | All of the above at kernel boundary |
+
+Placing virtual breakpoints (EPT-based, not INT3) at these protocol bridges can yield high-signal data with significantly lower environment setup complexity compared to full hypervisor instrumentation.
+
+---
+
+## 📍 Breakpoint Strategy Taxonomy
+
+| Type | Mechanism | Detectable by DRM? | Best Used For |
+|------|-----------|-------------------|---------------|
+| **INT3 (software)** | Replaces instruction byte | Yes — checksum detection | Quick exploration only |
+| **DR0–DR3 (hardware)** | CPU debug registers | Yes — registers are readable from Ring 3 | Limited utility vs. v12+ |
+| **EPT breakpoints** | Page permission removal | No — transparent to guest | Production research |
+| **Library breakpoints** | Hook at DLL entry | Partial — bypassed by direct syscalls | API-level bridge analysis |
+| **Volume breakpoints** | Storage filter / MMIO trap | No | License file access patterns |
+| **Syscall breakpoints** | SSDT entry hooks | Partial | Cross-process syscall tracing |
+
+---
+
+## 🔑 OEP Recovery Research
+
+Finding the **Original Entry Point** remains a foundational challenge at all privilege levels. Denuvo's stub runs first (integrity checks → license validation → decryption → OEP transfer). Key approaches by reliability:
+
+| Approach | Reliability vs. v15+ |
+|----------|---------------------|
+| TLS callback chain analysis | High — structurally predictable |
+| EPT write-then-execute monitoring | High — hardware-level, non-invasive |
+| Import table reconstruction | Medium — IAT may rebuild incrementally |
+| Stack unwind analysis | Medium — stack cookies complicate |
+| Exception handler pivot tracing | Medium |
+
+The **EPT write-then-execute** pattern is the most robust: the first execution of a previously write-only (decrypting) page is a strong near-OEP indicator, observable entirely from the hypervisor without touching the instruction stream.
+
+---
+
 ## 📚 References
 
 ### Academic Papers
@@ -1098,6 +1250,14 @@ LONG CALLBACK DebugExceptionHandler(PEXCEPTION_POINTERS exc) {
 - **SimpleSvm** - [github.com/tandasat/SimpleSvm](https://github.com/tandasat/SimpleSvm)
 - **EfiGuard** - [github.com/Mattiwatti/EfiGuard](https://github.com/Mattiwatti/EfiGuard)
 - **Goldberg Steam Emulator** - [gitlab.com/Mr_Goldberg/goldberg_emulator](https://gitlab.com/Mr_Goldberg/goldberg_emulator)
+- **HV-PlugNPlay** - [github.com/jcnnik/HV-PlugNPlay](https://github.com/jcnnik/HV-PlugNPlay) — Minimal plug-and-play hypervisor research framework
+- **kvc (binary comparator)** - [github.com/wesmar/kvc](https://github.com/wesmar/kvc) — Binary differential analysis tool for comparing game versions
+- **mojtabafalleh/emulator** - [github.com/mojtabafalleh/emulator](https://github.com/mojtabafalleh/emulator) — CPUID, HWID, fingerprint, and syscall extraction framework
+- **mojtabafalleh/emudbg** - [github.com/mojtabafalleh/emudbg](https://github.com/mojtabafalleh/emudbg) — Debug interface companion to the above emulator
+
+### Blog Posts & Technical Write-ups
+
+- **Denuvo Analysis** - [connorjaydunn.github.io/blog/posts/denuvo-analysis/](https://connorjaydunn.github.io/blog/posts/denuvo-analysis/) — Detailed walkthrough of Denuvo internals, protection layers, and anti-analysis techniques
 
 ### Scene Resources
 

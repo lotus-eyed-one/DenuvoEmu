@@ -28,5 +28,16 @@
 - **VEH**: Vectored Exception Handler
 - **Inline Patching**: Direct code modification
 - **Trampoline**: Hook preservation stub
+- **OEP**: Original Entry Point — the real entry point of an executable before any protection stub runs
+- **EPT Breakpoint**: Hypervisor-level breakpoint set by removing page execute permissions; transparent to guest
+- **Protocol Bridge**: An observable OS boundary that DRM must cross (network, registry, volume, WMI, syscall)
+- **Binary Differential Analysis**: Comparing two versions of a binary to isolate added/changed code regions
+- **Volume Breakpoint**: Breakpoint triggered by access to a specific disk sector or volume region
+- **Library Breakpoint**: Breakpoint placed at the entry of a specific imported library function
+- **Syscall Breakpoint**: Hook placed at a kernel SSDT entry; fires for all invocations of that syscall
+- **Direct Syscall**: Invoking a kernel syscall by number directly, bypassing all API-layer hooks
+- **HWID Fingerprint**: Composite unique identifier assembled from multiple hardware sources
+- **VM Transparency**: The degree to which a hypervisor environment is indistinguishable from bare metal
+- **RDTSC Drift**: Measurable timing difference in `RDTSC` reads caused by VM-exit latency
 
-*Full details in TECHNICAL_APPENDIX.md*
+*Full details in TECHNICAL_APPENDIX.md and DENUVO_VERSION_STRATEGY.md*

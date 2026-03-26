@@ -15,7 +15,11 @@ hypervisor-drm-research/
 ├── docs/                               # Detailed technical documentation
 │   ├── RING_ARCHITECTURE.md           # CPU privilege ring deep dive
 │   ├── COMPARISON_MATRIX.md           # Bypass technique comparison tables
-│   └── USER_MODE_EMULATOR.md          # User-mode emulator implementation guide
+│   ├── USER_MODE_EMULATOR.md          # User-mode emulator implementation guide
+│   └── DENUVO_VERSION_STRATEGY.md     # Version targeting, modern research approaches,
+│                                      #   environmental preconditions, binary differential
+│                                      #   analysis, cross-platform limits, protocol bridges,
+│                                      #   breakpoint taxonomy, OEP recovery, CPUID/HWID tools
 │
 ├── diagrams/                           # Technical architecture diagrams (SVG)
 │   ├── drm_fingerprint_sources.svg    # Hardware fingerprinting attack surface

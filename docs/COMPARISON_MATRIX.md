@@ -361,6 +361,8 @@ This document provides comprehensive comparison tables for evaluating different 
 - **Maximum stealth**: UEFI bootkit
 - **Research/learning**: Kernel driver
 
+> **Note on version targeting**: Research effort is best concentrated on Denuvo v12+, with v15+ being the dominant version in current major releases. Allocating significant effort to v1–v8 yields diminishing returns as most titles using those versions are near or past license expiry. See `docs/DENUVO_VERSION_STRATEGY.md` for full strategic rationale.
+
 ---
 
 *This comparison is for educational purposes only. Always respect intellectual property rights and software licenses.*

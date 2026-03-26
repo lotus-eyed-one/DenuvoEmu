@@ -4,11 +4,14 @@
 
 Expert-level research on hypervisor-based DRM bypass techniques, including:
 - ✅ 916-line comprehensive README
-- ✅ 3,500+ lines of technical documentation
+- ✅ 4,000+ lines of technical documentation
 - ✅ 4 SVG architecture diagrams
 - ✅ Ring -2 to Ring 3 implementation details
 - ✅ Comparison matrices for all bypass approaches
 - ✅ User-mode emulator code examples
+- ✅ Version targeting strategy & modern research approaches
+- ✅ Binary differential analysis, OEP recovery, protocol bridge taxonomy
+- ✅ CPUID / HWID / syscall extraction tool references
 
 ## Repository Navigation
 
@@ -20,6 +23,9 @@ Expert-level research on hypervisor-based DRM bypass techniques, including:
 | **Implementation** | docs/USER_MODE_EMULATOR.md |
 | **Low-Level Details** | appendix/TECHNICAL_APPENDIX.md |
 | **Diagrams** | diagrams/*.svg |
+| **Version targeting & modern approaches** | docs/DENUVO_VERSION_STRATEGY.md |
+| **Binary diff, OEP, protocol bridges** | docs/DENUVO_VERSION_STRATEGY.md |
+| **CPUID / HWID / syscall extraction tools** | docs/DENUVO_VERSION_STRATEGY.md |
 
 ## Key Concepts Summary
 
@@ -59,9 +65,10 @@ hypervisor-drm-research/
 ├── QUICK_START.md              # This file
 ├── STRUCTURE.md                # Repository organization
 ├── docs/
-│   ├── RING_ARCHITECTURE.md    # CPU privilege rings
-│   ├── COMPARISON_MATRIX.md    # Technique comparisons
-│   └── USER_MODE_EMULATOR.md   # Implementation guide
+│   ├── RING_ARCHITECTURE.md         # CPU privilege rings
+│   ├── COMPARISON_MATRIX.md         # Technique comparisons
+│   ├── USER_MODE_EMULATOR.md        # Implementation guide
+│   └── DENUVO_VERSION_STRATEGY.md   # Version targeting, modern approaches
 ├── diagrams/
 │   ├── drm_fingerprint_sources.svg
 │   ├── drm_hypervisor_arms_race.svg
