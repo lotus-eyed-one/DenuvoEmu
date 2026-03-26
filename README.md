@@ -107,12 +107,12 @@ Denuvo Anti-Tamper typically operates with multiple protection layers:
 ```
 ┌─────────────────────────────────────────────────────┐
 │         Application Layer (Ring 3)                  │
-│  ┌─────────────────────────────────────────────┐   │
-│  │  Game Executable + Denuvo Wrapper           │   │
-│  │  - Mutated Bytecode (MBA) Virtual Machine   │   │
-│  │  - Hardware Fingerprinting Probes           │   │
-│  │  - License Token Verification                │   │
-│  └─────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────┐    │
+│  │  Game Executable + Denuvo Wrapper           │    │
+│  │  - Mutated Bytecode (MBA) Virtual Machine   │    │
+│  │  - Hardware Fingerprinting Probes           │    │
+│  │  - License Token Verification               │    │
+│  └─────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────┘
                       ↓ Queries
 ┌─────────────────────────────────────────────────────┐
@@ -125,16 +125,16 @@ Denuvo Anti-Tamper typically operates with multiple protection layers:
                       ↓ System Calls
 ┌─────────────────────────────────────────────────────┐
 │         Kernel Layer (Ring 0)                       │
-│  - KUSER_SHARED_DATA (0x7FFE0000)                  │
-│  - Performance Counters (RDTSC, RDPMC)             │
+│  - KUSER_SHARED_DATA (0x7FFE0000)                   │
+│  - Performance Counters (RDTSC, RDPMC)              │
 │  - Kernel Debugger Detection                        │
 │  - Driver Enumeration                               │
 └─────────────────────────────────────────────────────┘
                       ↓ Hardware Instructions
 ┌─────────────────────────────────────────────────────┐
 │         Hardware Layer (CPU Features)               │
-│  - CPU Model/Family/Stepping (CPUID 0x01)          │
-│  - Virtualization Features (CPUID 0x01, ECX bit 5) │
+│  - CPU Model/Family/Stepping (CPUID 0x01)           │
+│  - Virtualization Features (CPUID 0x01, ECX bit 5)  │
 │  - Extended Features (CPUID 0x07)                   │
 │  - MSR Registers (Model-Specific Registers)         │
 └─────────────────────────────────────────────────────┘
@@ -469,7 +469,7 @@ LONG CALLBACK VectoredExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo) {
 │  │  Windows Kernel Loads → Drivers Initialize             │  │
 │  │  • SimpleSvm.sys (AMD) OR hyperkd.sys (Intel) loads    │  │
 │  │  • VMRUN/VMLAUNCH executed → CPU enters VMX/SVM mode   │  │
-│  │  • Hypervisor intercepts: CPUID, MSR, RDTSC, XGETBV   │  │
+│  │  • Hypervisor intercepts: CPUID, MSR, RDTSC, XGETBV    │  │
 │  │  • KUSER spoofing thread starts                        │  │
 │  └────────────────────────────────────────────────────────┘  │
 └──────────────────┬───────────────────────────────────────────┘
@@ -491,22 +491,22 @@ LONG CALLBACK VectoredExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo) {
 │  4. DENUVO INITIALIZATION (Multi-Ring Defense)               │
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │  Denuvo Wrapper Activates → Hardware Fingerprinting    │  │
-│  │                                                         │  │
+│  │                                                        │  │
 │  │  [Ring 3] Game executes CPUID → [Ring -1] Hypervisor   │  │
-│  │           intercepts → Returns fake CPU info            │  │
-│  │                                                         │  │
+│  │           intercepts → Returns fake CPU info           │  │
+│  │                                                        │  │
 │  │  [Ring 3] Game reads KUSER_SHARED_DATA →               │  │
-│  │           [Ring 0] Spoofing thread provides fake time   │  │
-│  │                                                         │  │
+│  │           [Ring 0] Spoofing thread provides fake time  │  │
+│  │                                                        │  │
 │  │  [Ring 3] Game calls NtQuerySystemInformation →        │  │
-│  │           [Ring 3] IAT hook returns fake "no debugger"  │  │
-│  │                                                         │  │
+│  │           [Ring 3] IAT hook returns fake "no debugger" │  │
+│  │                                                        │  │
 │  │  [Ring 3] Game queries registry for hardware →         │  │
-│  │           [Ring 3] IAT hook returns consistent values   │  │
-│  │                                                         │  │
+│  │           [Ring 3] IAT hook returns consistent values  │  │
+│  │                                                        │  │
 │  │  [Ring 3] Game validates Steam license →               │  │
 │  │           [Ring 3] Goldberg emulator provides fake     │  │
-│  │                    steamclient responses                │  │
+│  │                    steamclient responses               │  │
 │  └────────────────────────────────────────────────────────┘  │
 └──────────────────┬───────────────────────────────────────────┘
                    ▼
@@ -693,11 +693,11 @@ Instead of using a hypervisor at Ring -1, DRM bypass can be achieved through **e
 │  RING -1 HYPERVISOR (Traditional Approach)                  │
 │  ┌────────────────────────────────────────────────────────┐ │
 │  │  Hardware Virtualization (VMX/SVM)                     │ │
-│  │  • Intercepts ALL privileged instructions             │ │
-│  │  • CPUID, RDTSC, MSR, XGETBV trapped at CPU level    │ │
-│  │  • Generic solution across games                      │ │
-│  │  ❌ Must disable VBS/HVCI/Secure Boot                │ │
-│  │  ❌ Complex, potential system instability            │ │
+│  │  • Intercepts ALL privileged instructions              │ │
+│  │  • CPUID, RDTSC, MSR, XGETBV trapped at CPU level      │ │
+│  │  • Generic solution across games                       │ │
+│  │  ❌ Must disable VBS/HVCI/Secure Boot                 │ │
+│  │  ❌ Complex, potential system instability             │ │
 │  └────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
                           ↓ CAN BE REPLACED BY ↓
@@ -820,20 +820,20 @@ LONG CALLBACK VEHHandler(PEXCEPTION_POINTERS exc) {
 │  HYBRID EMULATOR ARCHITECTURE                          │
 ├────────────────────────────────────────────────────────┤
 │  Ring -1: Minimal Hypervisor (Optional)                │
-│           • ONLY CPUID leaf 0x01 and 0x40000000       │
-│           • ONLY RDTSC for timing normalization       │
-│           • Keep VBS enabled (nested virtualization)  │
+│           • ONLY CPUID leaf 0x01 and 0x40000000        │
+│           • ONLY RDTSC for timing normalization        │
+│           • Keep VBS enabled (nested virtualization)   │
 ├────────────────────────────────────────────────────────┤
-│  Ring 0: Signed Kernel Driver (WHQL certified)        │
-│           • KUSER_SHARED_DATA spoofing                │
-│           • NtQuerySystemInformation filtering        │
-│           • Process/thread callbacks                  │
-│           • No DSE bypass needed                      │
+│  Ring 0: Signed Kernel Driver (WHQL certified)         │
+│           • KUSER_SHARED_DATA spoofing                 │
+│           • NtQuerySystemInformation filtering         │
+│           • Process/thread callbacks                   │
+│           • No DSE bypass needed                       │
 ├────────────────────────────────────────────────────────┤
-│  Ring 3: User-Mode DLL                                │
-│           • API hooks (GetTickCount, registry, etc.)  │
-│           • Steam client emulation (Goldberg)         │
-│           • VEH for non-critical instructions         │
+│  Ring 3: User-Mode DLL                                 │
+│           • API hooks (GetTickCount, registry, etc.)   │
+│           • Steam client emulation (Goldberg)          │
+│           • VEH for non-critical instructions          │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -932,10 +932,10 @@ NTSTATUS NtQuerySystemInformation_Hook(...) {
 
 **Architecture**:
 ```
-┌─────────────┐          ┌──────────────┐         ┌─────────────┐
+┌─────────────┐          ┌──────────────┐         ┌──────────────┐
 │  Game Client│  ---->   │  Proxy Server│  ---->  │ Denuvo Server│
 │  (Ring 3)   │  <----   │  (Emulated)  │  <----  │  (License)   │
-└─────────────┘          └──────────────┘         └─────────────┘
+└─────────────┘          └──────────────┘         └──────────────┘
                                │
                          Spoofs hardware
                          Handles validation
