@@ -29,6 +29,14 @@
 
 This repository contains comprehensive research on hardware virtualization techniques used to bypass modern Digital Rights Management (DRM) systems, specifically Denuvo Anti-Tamper. The analysis covers multi-layer attack chains spanning four CPU privilege levels:
 
+### Architecture Overview
+
+![DRM Fingerprint Sources](diagrams/drm_fingerprint_sources.svg)
+*Hardware fingerprinting attack surface used by modern DRM systems*
+
+![Hypervisor Arms Race](diagrams/drm_hypervisor_arms_race.svg)
+*Evolution of DRM detection vs. hypervisor evasion techniques (2014-2026)*
+
 | Privilege Level | Ring | Component Type | Primary Function |
 |----------------|------|----------------|------------------|
 | **UEFI Firmware** | Ring -2 | UEFI DXE Driver | Boot-level security bypass (PatchGuard, DSE) |
@@ -661,6 +669,250 @@ chafa diagrams/vm_exit_entry_cycle.svg
 │  ✓ Do not profit from piracy or crack distribution      │
 └─────────────────────────────────────────────────────────┘
 ```
+
+---
+
+---
+
+## 🔄 How Emulators Replace Hypervisors
+
+### The Emulation Ladder: Ring-by-Ring Replacement
+
+Instead of using a hypervisor at Ring -1, DRM bypass can be achieved through **emulators operating at different privilege levels**, each with different trade-offs:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  RING -1 HYPERVISOR (Traditional Approach)                  │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │  Hardware Virtualization (VMX/SVM)                     │ │
+│  │  • Intercepts ALL privileged instructions             │ │
+│  │  • CPUID, RDTSC, MSR, XGETBV trapped at CPU level    │ │
+│  │  • Generic solution across games                      │ │
+│  │  ❌ Must disable VBS/HVCI/Secure Boot                │ │
+│  │  ❌ Complex, potential system instability            │ │
+│  └────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+                          ↓ CAN BE REPLACED BY ↓
+┌─────────────────────────────────────────────────────────────┐
+│  EMULATOR ALTERNATIVES (By Ring Level)                      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Ring 0 Emulator: Kernel-Mode Driver
+
+**Replaces**: 60-70% of hypervisor functionality
+
+![EPT Translation](diagrams/ept_address_translation.svg)
+*Extended Page Tables - how hypervisors virtualize memory (replaced by MDL mapping in Ring 0)*
+
+```c
+// Kernel driver approach (no hypervisor needed)
+NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) {
+    // Install process notification callback
+    PsSetCreateProcessNotifyRoutineEx(ProcessCallback, FALSE);
+    
+    // Hook system calls via SSDT (if HVCI allows)
+    // OR use filter callbacks (more compatible)
+    CmRegisterCallback(RegistryCallback, NULL, &CookieReg);
+    ObRegisterCallbacks(&CallbackRegistration, &CookieOb);
+    
+    return STATUS_SUCCESS;
+}
+
+void ProcessCallback(PEPROCESS Process, HANDLE ProcessId, PPS_CREATE_NOTIFY_INFO CreateInfo) {
+    if (CreateInfo && IsTargetGame(CreateInfo->ImageFileName)) {
+        // Start KUSER_SHARED_DATA spoofing thread
+        StartKUSERSpoof(ProcessId);
+        
+        // Cannot intercept CPUID/RDTSC like hypervisor
+        // But can spoof kernel queries and timing sources
+    }
+}
+```
+
+**Capabilities vs. Hypervisor**:
+
+| Feature | Ring -1 Hypervisor | Ring 0 Driver |
+|---------|-------------------|---------------|
+| CPUID interception | ✅ Hardware trap | ❌ Cannot intercept* |
+| RDTSC interception | ✅ Hardware trap | ❌ Cannot intercept* |
+| MSR read/write | ✅ Full control | ✅ Can read/write MSRs |
+| KUSER_SHARED_DATA spoof | ✅ Via EPT mapping | ✅ Direct write access |
+| NtQuerySystemInformation | ✅ Via EPT hook | ✅ SSDT hook or filter |
+| Memory virtualization | ✅ EPT/NPT | ⚠️ MDL mapping only |
+| System stability | ⚠️ VM-exit bugs | ✅ Better (no VM overhead) |
+| VBS/HVCI compatibility | ❌ Conflicts | ⚠️ Signed driver only |
+
+*Can be intercepted if the driver itself uses a minimal hypervisor (hybrid approach)
+
+---
+
+### Ring 3 Emulator: User-Mode Hooks
+
+**Replaces**: 30-40% of hypervisor functionality
+
+![VM Exit Cycle](diagrams/vm_exit_entry_cycle.svg)
+*VM-Exit/Entry cycle - replaced by VEH (Vectored Exception Handler) in Ring 3*
+
+```c
+// User-mode approach (no kernel access needed)
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+    if (fdwReason == DLL_PROCESS_ATTACH) {
+        // Install API hooks (replaces hypervisor EPT hooks)
+        InstallIATHooks();
+        
+        // Register VEH (replaces hypervisor VM-exits)
+        AddVectoredExceptionHandler(1, VEHHandler);
+        
+        // Apply inline patches (replaces CPUID interception)
+        PatchCPUIDInstructions();
+    }
+    return TRUE;
+}
+
+LONG CALLBACK VEHHandler(PEXCEPTION_POINTERS exc) {
+    // Emulates hypervisor VM-exit handling for privileged instructions
+    if (exc->ExceptionRecord->ExceptionCode == EXCEPTION_PRIV_INSTRUCTION) {
+        PBYTE rip = (PBYTE)exc->ContextRecord->Rip;
+        
+        if (rip[0] == 0x0F && rip[1] == 0xA2) {  // CPUID
+            // Emulate CPUID (like hypervisor would)
+            EmulateCPUID(exc->ContextRecord);
+            exc->ContextRecord->Rip += 2;
+            return EXCEPTION_CONTINUE_EXECUTION;
+        }
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+```
+
+**Capabilities vs. Hypervisor**:
+
+| Feature | Ring -1 Hypervisor | Ring 3 User-Mode |
+|---------|-------------------|------------------|
+| CPUID interception | ✅ Hardware trap | ⚠️ VEH or inline patch |
+| RDTSC interception | ✅ Hardware trap | ⚠️ VEH or inline patch |
+| MSR access | ✅ Full control | ❌ Privilege required |
+| API hooking | ⚠️ Via EPT | ✅ IAT/Inline hooks |
+| Timing spoofing | ✅ RDTSC trap | ⚠️ GetTickCount hook only |
+| Detection risk | 🟡 Medium | 🔴 High |
+| Portability | ⚠️ CPU-specific | ✅ Works everywhere |
+| VBS/HVCI compatible | ❌ No | ✅ Yes |
+
+---
+
+### Hybrid Emulator: Multi-Ring Coordination
+
+**Replaces**: 80-90% of hypervisor functionality
+
+**Best approach**: Combine multiple rings to achieve hypervisor-like coverage without full virtualization:
+
+```
+┌────────────────────────────────────────────────────────┐
+│  HYBRID EMULATOR ARCHITECTURE                          │
+├────────────────────────────────────────────────────────┤
+│  Ring -1: Minimal Hypervisor (Optional)                │
+│           • ONLY CPUID leaf 0x01 and 0x40000000       │
+│           • ONLY RDTSC for timing normalization       │
+│           • Keep VBS enabled (nested virtualization)  │
+├────────────────────────────────────────────────────────┤
+│  Ring 0: Signed Kernel Driver (WHQL certified)        │
+│           • KUSER_SHARED_DATA spoofing                │
+│           • NtQuerySystemInformation filtering        │
+│           • Process/thread callbacks                  │
+│           • No DSE bypass needed                      │
+├────────────────────────────────────────────────────────┤
+│  Ring 3: User-Mode DLL                                │
+│           • API hooks (GetTickCount, registry, etc.)  │
+│           • Steam client emulation (Goldberg)         │
+│           • VEH for non-critical instructions         │
+└────────────────────────────────────────────────────────┘
+```
+
+**Advantages**:
+- ✅ Reduced hypervisor attack surface (only 2 instructions vs. all)
+- ✅ VBS/HVCI can stay enabled (if using nested virtualization)
+- ✅ Signed driver = no DSE bypass needed
+- ✅ Better system stability
+- ✅ Lower detection risk
+
+**Example: Minimal Hypervisor + Kernel Driver**
+
+```c
+// Ring -1: Minimal hypervisor (only 2 intercepts)
+void VmExitHandler(GUEST_STATE *guest) {
+    UINT32 exitReason = GetExitReason();
+    
+    switch (exitReason) {
+        case EXIT_REASON_CPUID:
+            // ONLY handle leaf 0x01 and 0x40000000
+            if (guest->rax == 0x01 || guest->rax == 0x40000000) {
+                HandleCPUID(guest);
+            } else {
+                // Pass through all other CPUID leaves
+            }
+            break;
+            
+        case EXIT_REASON_RDTSC:
+            // Normalize timing
+            NormalizeRDTSC(guest);
+            break;
+            
+        // NO other intercepts - let kernel driver handle the rest
+    }
+}
+
+// Ring 0: Kernel driver handles everything else
+NTSTATUS NtQuerySystemInformation_Hook(...) {
+    // Filter kernel queries (replaces hypervisor EPT hooks)
+    if (SystemInformationClass == SystemKernelDebuggerInformation) {
+        // Spoof response
+    }
+    return Original_NtQuerySystemInformation(...);
+}
+```
+
+---
+
+### Emulator Comparison Matrix
+
+| Emulator Type | Ring | Coverage | Complexity | VBS Compatible | Effectiveness |
+|--------------|------|----------|------------|----------------|---------------|
+| **Full Hypervisor** | -1 | 100% | Very High | ❌ No | ⭐⭐⭐⭐⭐ |
+| **Minimal Hypervisor** | -1 | 40% | High | ⚠️ Nested only | ⭐⭐⭐⭐ |
+| **Kernel Driver** | 0 | 60% | Medium | ⚠️ Signed only | ⭐⭐⭐⭐ |
+| **User-Mode Only** | 3 | 30% | Low | ✅ Yes | ⭐⭐ |
+| **Hybrid (Ring -1 + 0)** | -1/0 | 85% | High | ⚠️ Partial | ⭐⭐⭐⭐⭐ |
+| **Hybrid (Ring 0 + 3)** | 0/3 | 70% | Medium | ⚠️ Signed only | ⭐⭐⭐⭐ |
+
+---
+
+### When to Use Which Emulator
+
+#### Use Ring -1 Hypervisor When:
+- ✅ Maximum effectiveness needed (Denuvo v15+)
+- ✅ Generic solution across multiple games
+- ✅ System security can be disabled
+- ❌ Acceptable to disable VBS/HVCI
+
+#### Use Ring 0 Kernel Driver When:
+- ✅ Good effectiveness needed (Denuvo v12-v14)
+- ✅ Can obtain driver signature (WHQL)
+- ✅ Want better stability than hypervisor
+- ⚠️ Acceptable for kernel-mode risks
+
+#### Use Ring 3 User-Mode When:
+- ✅ Older Denuvo versions (v1-v11)
+- ✅ Must keep VBS/HVCI enabled
+- ✅ Portability is priority
+- ✅ Per-game RE is acceptable
+- ❌ Detection risk is acceptable
+
+#### Use Hybrid Approach When:
+- ✅ Best of both worlds needed
+- ✅ Can invest in complexity
+- ✅ Want to minimize security impact
+- ✅ Have resources for multi-layer development
 
 ---
 
