@@ -1,0 +1,99 @@
+MIT License
+
+Copyright (c) 2026 Hypervisor DRM Research Project Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+EDUCATIONAL USE DISCLAIMER
+
+This repository contains academic research on hardware virtualization techniques
+and digital rights management (DRM) bypass methods. The information provided is
+intended solely for:
+
+1. Educational purposes in computer security research
+2. Understanding modern anti-tamper protection mechanisms
+3. Security vulnerability disclosure and analysis
+4. Academic advancement of virtualization technology
+
+The authors and contributors explicitly DO NOT condone:
+- Software piracy or copyright infringement
+- Illegal circumvention of copy protection systems
+- Distribution of cracked software or game cracks
+- Use of this information for commercial piracy
+
+This research is provided under the principle of fair use for academic and
+security research purposes. Users are responsible for complying with all
+applicable laws, including the Digital Millennium Copyright Act (DMCA) and
+equivalent international legislation.
+
+By accessing this repository, you agree to use the information responsibly and
+ethically, respecting intellectual property rights and software licenses.
+
+For responsible disclosure of security vulnerabilities discovered through this
+research, please contact the affected software vendors directly through their
+established vulnerability reporting channels.
+
+---
+
+LEGAL NOTICE
+
+The techniques described in this repository may violate:
+- Anti-circumvention provisions of copyright law (DMCA § 1201)
+- Computer Fraud and Abuse Act (CFAA) in the United States
+- Equivalent legislation in other jurisdictions
+
+Users should seek legal counsel before implementing any techniques described
+herein. The authors assume no liability for any legal consequences arising
+from the use of this information.
+
+This research is published in the public interest to:
+- Inform software developers of potential security weaknesses
+- Educate security researchers on modern protection mechanisms
+- Promote transparency in DRM technology evaluation
+- Enable informed discussion of digital rights and fair use
+
+---
+
+ATTRIBUTION
+
+If you use this research in academic work, please cite:
+
+Hypervisor-Based DRM Bypass Research (2026)
+https://github.com/[repository-url]
+
+Academic papers and publications referencing this work should include proper
+citations following standard academic citation formats.
+
+---
+
+CONTRIBUTING
+
+Contributors to this repository agree that their contributions:
+1. Are provided under the MIT License
+2. Are original work or properly attributed
+3. Do not include illegal software cracks or copyrighted material
+4. Serve legitimate educational and research purposes
+
+All contributions must respect the ethical guidelines outlined in this license.
+
+---
+
+Last Updated: March 25, 2026
