@@ -1306,7 +1306,7 @@ Please ensure all contributions:
 ## 📧 Contact
 
 For academic inquiries or responsible disclosure:
-- **GitHub Issues**: [Report technical issues or suggest improvements](../../issues)
+- **GitHub Issues**: [Report technical issues or suggest improvements](https://github.com/lotus-eyed-one/DenuvoEmu/issues)
 - **Research Collaboration**: Contact through academic channels
 
 ---
