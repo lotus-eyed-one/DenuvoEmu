@@ -230,7 +230,7 @@ When adding new content, follow this structure:
 ## License
 
 All content in this repository is licensed under the MIT License with Educational Use provisions.  
-See [LICENSE](../LICENSE) for full details.
+See [LICENSE](LICENSE) for full details.
 
 ---
 
